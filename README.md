@@ -62,7 +62,7 @@ depot build -t runpodwhisperx . --platform linux/amd64
 Tag and Push it
 
 ```
-docker tag runpodwhisperx:latest justinwlin/runpodwhisperx:1.0 && docker push justinwlin/runpodwhisperx:1.0
+docker tag runpodwhisperx:latest jamiepratt73/runpodwhisperx:1.0 && docker push jamiepratt73/runpodwhisperx:1.0
 ```
 
 Or build & directly push it with depot:

@@ -7,8 +7,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 WORKDIR /app
 
 # ARGs and ENVs
-ARG WHISPER_MODEL=small
-ARG LANG=en
+ARG WHISPER_MODEL=large-v3
+ARG LANG=pl
 ARG TORCH_HOME=/cache/torch
 ARG HF_HOME=/cache/huggingface
 

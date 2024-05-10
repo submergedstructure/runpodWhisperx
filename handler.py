@@ -6,12 +6,12 @@ import gc
 import base64
 import tempfile
 import requests
+import traceback
 
 # CHECK THE ENV VARIABLES FOR DEVICE AND COMPUTE TYPE
 device = os.environ.get('DEVICE', 'cuda') # cpu if on Mac
 compute_type = os.environ.get('COMPUTE_TYPE', 'float16') #int8 if on Mac
 batch_size = 16 # reduce if low on GPU mem
-language_code = "en"
 
 def base64_to_tempfile(base64_data):
     """
@@ -52,6 +52,7 @@ def handler(event):
                 "input": {
                     "audio_base_64": str,  # Base64-encoded audio data (optional)
                     "audio_url": str       # URL of the audio file (optional)
+                    "language_code": str   # Language code (optional), default is "pl"
                 }
             }
             Either "audio_base_64" or "audio_url" must be provided.
@@ -69,9 +70,14 @@ def handler(event):
     else:
         return "No audio input provided"
 
+    if job_input.get('language_code'):
+        language_code = job_input.get('language_code')
+    else:
+        language_code = "pl"
+
     try:
         # 1. Transcribe with original whisper (batched)
-        model = whisperx.load_model("small", device, compute_type=compute_type, language="en")
+        model = whisperx.load_model("large-v3", device, compute_type=compute_type, language=language_code)
         # Load the audio
         audio = whisperx.load_audio(audio_input)
         # Transcribe the audio
@@ -84,8 +90,8 @@ def handler(event):
 
         # after alignment
         return result
-    except:
-        return "Error transcribing audio"
+    except Exception as e:
+        return f"Error transcribing audio: {str(e)}, Args: {e.args}, Traceback: {''.join(traceback.format_tb(e.__traceback__))}"
 
 runpod.serverless.start({
     "handler": handler
