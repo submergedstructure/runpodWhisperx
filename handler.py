@@ -53,6 +53,9 @@ def handler(event):
                     "audio_base_64": str,  # Base64-encoded audio data (optional)
                     "audio_url": str       # URL of the audio file (optional)
                     "language_code": str   # Language code (optional), default is "pl"
+                    "diarize": bool        # Whether to perform diarization (optional), default is False
+                    "min_speakers": int    # Minimum number of speakers for diarization (optional)
+                    "max_speakers": int    # Maximum number of speakers for diarization (optional)
                 }
             }
             Either "audio_base_64" or "audio_url" must be provided.
@@ -60,7 +63,6 @@ def handler(event):
     job_input = event['input']
     job_input_audio_base_64 = job_input.get('audio_base_64')
     job_input_audio_url = job_input.get('audio_url')
-
     if job_input_audio_base_64:
         # If there is base64 data
         audio_input = base64_to_tempfile(job_input_audio_base_64)
@@ -69,11 +71,11 @@ def handler(event):
         audio_input = download_file(job_input_audio_url)
     else:
         return "No audio input provided"
-
-    if job_input.get('language_code'):
-        language_code = job_input.get('language_code')
-    else:
-        language_code = "pl"
+    
+    language_code = job_input.get('language_code', 'pl')
+    diarize = job_input.get('diarize', False)
+    min_speakers = job_input.get('min_speakers')
+    max_speakers = job_input.get('max_speakers')
 
     try:
         # 1. Transcribe with original whisper (batched)
@@ -87,6 +89,17 @@ def handler(event):
         model_a, metadata = whisperx.load_align_model(language_code=language_code, device=device)
         result = whisperx.align(result["segments"], model_a, metadata, audio, device)
         print(result["segments"])
+
+        # 3. Optionally perform diarization
+        if diarize:
+            diarize_model = whisperx.DiarizationPipeline(use_auth_token=os.environ.get('YOUR_HF_TOKEN'), device=device)
+            if min_speakers is not None and max_speakers is not None:
+                diarize_segments = diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
+            else:
+                diarize_segments = diarize_model(audio)
+            result = whisperx.assign_word_speakers(diarize_segments, result)
+            print(diarize_segments)
+            print(result["segments"]) # segments are now assigned speaker IDs
 
         # after alignment
         return result
