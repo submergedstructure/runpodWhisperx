@@ -56,6 +56,7 @@ def handler(event):
                     "diarize": bool        # Whether to perform diarization (optional), default is False
                     "min_speakers": int    # Minimum number of speakers for diarization (optional)
                     "max_speakers": int    # Maximum number of speakers for diarization (optional)
+                    "transcribe_options": dict  # Options to pass to model.transcribe (optional)
                 }
             }
             Either "audio_base_64" or "audio_url" must be provided.
@@ -76,6 +77,7 @@ def handler(event):
     diarize = job_input.get('diarize', False)
     min_speakers = job_input.get('min_speakers')
     max_speakers = job_input.get('max_speakers')
+    transcribe_options = job_input.get('transcribe_options', {})
 
     try:
         # 1. Transcribe with original whisper (batched)
@@ -83,7 +85,7 @@ def handler(event):
         # Load the audio
         audio = whisperx.load_audio(audio_input)
         # Transcribe the audio
-        result = model.transcribe(audio, batch_size=batch_size, language=language_code, print_progress=True)
+        result = model.transcribe(audio, batch_size=batch_size, language=language_code, print_progress=True, **transcribe_options)
 
         # 2. Align whisper output
         model_a, metadata = whisperx.load_align_model(language_code=language_code, device=device)
